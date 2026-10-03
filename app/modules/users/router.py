@@ -2,7 +2,8 @@ from fastapi import APIRouter, status
 from app.modules.users import schemas
 from app.core.dependencies import (
     DBSession,
-    VIEW_USER_PERMISSION
+    VIEW_USER_PERMISSION,
+    CurrentUser
 )
 from app.modules.users.service import UserService
 
@@ -13,7 +14,7 @@ router = APIRouter(
 )
 
 @router.post(
-    "/register", 
+    "/register",
     response_model=schemas.UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Đăng ký người dùng mới"
@@ -34,3 +35,14 @@ async def get_all_users(
     current_user: VIEW_USER_PERMISSION
 ):
     return await UserService.get_all_users(db)
+
+@router.get(
+    "/permissions",
+    response_model=list[schemas.PermissionResponse],
+    summary="Lấy danh sách tất cả quyền tồn tại trong hệ thống"
+)
+async def get_all_permissions(
+    db: DBSession,
+    current_user: CurrentUser
+):
+    return await UserService.get_all_permissions(db)

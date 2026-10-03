@@ -60,5 +60,14 @@ class UserService:
         """
         users = (await db.execute(select(models.User))).scalars().all()
         return users
+    
+    
+    @staticmethod
+    async def get_all_permissions(db: AsyncSession) -> list[models.Permission]:
+        """
+        Lấy danh sách tất cả quyền tồn tại trong hệ thống.
+        """
+        permissions = (await db.execute(select(models.Permission))).scalars().all()
+        return permissions
 
         

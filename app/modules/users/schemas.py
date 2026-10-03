@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
+from app.core.enum_data import PermissionEnum
 
 class UserBase(BaseModel):
     username: str
@@ -17,5 +18,11 @@ class UserResponse(BaseModel):
     fullname: str
     age: int
     created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+class PermissionResponse(BaseModel):
+    permission: PermissionEnum
+    create_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
