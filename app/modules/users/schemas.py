@@ -23,6 +23,6 @@ class UserResponse(BaseModel):
     
 class PermissionResponse(BaseModel):
     permission: PermissionEnum
-    create_at: datetime
+    created_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
