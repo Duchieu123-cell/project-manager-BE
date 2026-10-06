@@ -24,7 +24,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://project-manager-frontend-dun.vercel.app"
+        "https://project-manager-fe-six.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
