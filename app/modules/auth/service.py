@@ -62,10 +62,10 @@ class AuthService:
         # Gắn vào cookie
         response.set_cookie(
             key="refresh_token",
-            value=refresh_token,    
+            value=refresh_token,
             httponly=True,                                                      # Chống XSS (JS không đọc được)
             secure=False if settings.ENVIRONMENT != "production" else True,     # Đổi thành True khi chạy HTTPS Production
-            samesite="lax",                                                     # Chống CSRF
+            samesite="lax" if settings.ENVIRONMENT != "production" else "none",                                                     # Chống CSRF
             max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
             path="/auth"                                                        # Chỉ gửi cookie cho các endpoint bắt đầu bằng /auth
         )
@@ -107,7 +107,12 @@ class AuthService:
                 
             user_id = int(user_id_str)
         except ExpiredSignatureError:
-            response.delete_cookie(key="refresh_token")
+            response.delete_cookie(
+                key="refresh_token",
+                httponly=True,                                                      # Chống XSS (JS không đọc được)
+                secure=False if settings.ENVIRONMENT != "production" else True,     # Đổi thành True khi chạy HTTPS Production
+                samesite="lax" if settings.ENVIRONMENT != "production" else "none",  
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={
@@ -117,7 +122,12 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )       
         except (InvalidTokenError, ValueError):
-            response.delete_cookie(key="refresh_token")
+            response.delete_cookie(
+                key="refresh_token",
+                httponly=True,                                                      # Chống XSS (JS không đọc được)
+                secure=False if settings.ENVIRONMENT != "production" else True,     # Đổi thành True khi chạy HTTPS Production
+                samesite="lax" if settings.ENVIRONMENT != "production" else "none",                  
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={
@@ -144,7 +154,12 @@ class AuthService:
             await db.execute(revoke_all_stmt)
             await db.flush()
         
-            response.delete_cookie(key="refresh_token")
+            response.delete_cookie(
+                key="refresh_token",
+                httponly=True,                                                      # Chống XSS (JS không đọc được)
+                secure=False if settings.ENVIRONMENT != "production" else True,     # Đổi thành True khi chạy HTTPS Production
+                samesite="lax" if settings.ENVIRONMENT != "production" else "none",                  
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={
@@ -194,7 +209,7 @@ class AuthService:
             value=new_refresh_token,    
             httponly=True,                                                      # Chống XSS (JS không đọc được)
             secure=False if settings.ENVIRONMENT != "production" else True,     # Đổi thành True khi chạy HTTPS Production
-            samesite="lax",                                                     # Chống CSRF
+            samesite="lax" if settings.ENVIRONMENT != "production" else "none",                                                     # Chống CSRF
             max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
             path="/auth"                                                        # Chỉ gửi cookie cho các endpoint bắt đầu bằng /auth
         )
@@ -214,5 +229,10 @@ class AuthService:
             await db.flush()
 
         # Xóa Cookie khỏi trình duyệt client
-        response.delete_cookie(key="refresh_token")
+        response.delete_cookie(
+            key="refresh_token",
+            httponly=True,
+            secure=False if settings.ENVIRONMENT != "production" else True,
+            samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+        )
         return None
