@@ -14,7 +14,10 @@ from app.core.security import (
     REFRESH_TOKEN_EXPIRE_DAYS
 )
 import jwt
-from jwt.exceptions import InvalidTokenError
+from jwt.exceptions import (
+    InvalidTokenError,
+    ExpiredSignatureError
+)
 from datetime import datetime, timezone
 from app.core.config import settings
 
@@ -35,7 +38,10 @@ class AuthService:
         if not user or not verify_password(password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Sai username hoặc password",
+                detail={
+                    "message": "Sai username hoặc password",
+                    "type": "invalid_credentials"
+                },
                 headers={"WWW-Authenticate": "Bearer"},
             )
             
@@ -81,7 +87,10 @@ class AuthService:
             if payload.get("type") != "refresh":
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Token không phải là refresh token.",
+                    detail={
+                        "message": "Token không phải là refresh token",
+                        "type": "invalid_refresh_token"
+                    },
                     headers={"WWW-Authenticate": "Bearer"},
                 )
             user_id_str: str | None = payload.get("sub")
@@ -89,17 +98,32 @@ class AuthService:
             if not user_id_str:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Không thể định danh người dùng từ refresh token.",
+                    detail={
+                        "message": "Không tìm thấy id người dùng từ refresh token",
+                        "type": "invalid_refresh_token"
+                    },
                     headers={"WWW-Authenticate": "Bearer"},
                 )
                 
             user_id = int(user_id_str)
-                
+        except ExpiredSignatureError:
+            response.delete_cookie(key="refresh_token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={
+                    "message": "Refresh token đã hết hạn",
+                    "type": "expired_refresh_token"
+                },
+                headers={"WWW-Authenticate": "Bearer"},
+            )       
         except (InvalidTokenError, ValueError):
             response.delete_cookie(key="refresh_token")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Refresh token không hợp lệ hoặc đã hết hạn.",
+                detail={
+                    "message": "Refresh token không hợp lệ",
+                    "type": "invalid_refresh_token"
+                },
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
@@ -123,14 +147,29 @@ class AuthService:
             response.delete_cookie(key="refresh_token")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Phát hiện token bị tái sử dụng bất thường. Vui lòng đăng nhập lại!",
+                detail={
+                    "message": "Refresh token bị tái sử dụng bất thường",
+                    "type": "invalid_refresh_token"
+                },
                 headers={"WWW-Authenticate": "Bearer"},
             )
         # Nếu không tìm thấy hoặc đã hết hạn
-        if not saved_token or saved_token.expires_at < datetime.now(timezone.utc):
+        if not saved_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Refresh Token không hợp lệ hoặc đã hết hạn",
+                detail={
+                    "message": "Refresh token không hợp lệ",
+                    "type": "invalid_refresh_token"
+                },
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if saved_token.expires_at < datetime.now(timezone.utc):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={
+                    "message": "Refresh token đã hết hạn",
+                    "type": "expired_refresh_token"
+                },
                 headers={"WWW-Authenticate": "Bearer"},
             )
             

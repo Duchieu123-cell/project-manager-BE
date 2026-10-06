@@ -6,7 +6,7 @@ from app.modules.users import models
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from app.core.config import settings
-from jwt.exceptions import InvalidTokenError
+from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 from app.core.enum_data import PermissionEnum
@@ -23,17 +23,31 @@ async def get_current_user(access_token: Token, db: DBSession) -> models.User:
         if not user_id_str:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Không thể định danh người dùng từ token.",
+                detail={
+                    "message": "Không tìm thấy id người dùng từ access token",
+                    "type": "invalid_access_token"
+                },
                 headers={"WWW-Authenticate": "Bearer"},
             )
             
         user_id = int(user_id_str)
-            
-
+    
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "message": "Access token đã hết hạn",
+                "type": "expired_access_token"
+            },
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except (InvalidTokenError, ValueError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token không hợp lệ hoặc đã hết hạn.",
+            detail={
+                "message": "Access token không hợp lệ",
+                "type": "invalid_access_token"
+            },
             headers={"WWW-Authenticate": "Bearer"},
         )
         
@@ -48,7 +62,10 @@ async def get_current_user(access_token: Token, db: DBSession) -> models.User:
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Không thể định danh người dùng từ token.",
+            detail={
+                "message": "Không tìm thấy người dùng có id từ access token",
+                "type": "invalid_access_token"
+            },
             headers={"WWW-Authenticate": "Bearer"},
         )
         
