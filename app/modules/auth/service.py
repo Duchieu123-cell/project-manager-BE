@@ -111,7 +111,8 @@ class AuthService:
                 key="refresh_token",
                 httponly=True,                                                      # Chống XSS (JS không đọc được)
                 secure=False if settings.ENVIRONMENT != "production" else True,     # Đổi thành True khi chạy HTTPS Production
-                samesite="lax" if settings.ENVIRONMENT != "production" else "none",  
+                samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+                path="/auth"                                                        # Chỉ gửi cookie cho các endpoint bắt đầu bằng /auth
             )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -126,7 +127,8 @@ class AuthService:
                 key="refresh_token",
                 httponly=True,                                                      # Chống XSS (JS không đọc được)
                 secure=False if settings.ENVIRONMENT != "production" else True,     # Đổi thành True khi chạy HTTPS Production
-                samesite="lax" if settings.ENVIRONMENT != "production" else "none",                  
+                samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+                path="/auth"                                                        # Chỉ gửi cookie cho các endpoint bắt đầu bằng /auth
             )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -158,7 +160,8 @@ class AuthService:
                 key="refresh_token",
                 httponly=True,                                                      # Chống XSS (JS không đọc được)
                 secure=False if settings.ENVIRONMENT != "production" else True,     # Đổi thành True khi chạy HTTPS Production
-                samesite="lax" if settings.ENVIRONMENT != "production" else "none",                  
+                samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+                path="/auth"                                                        # Chỉ gửi cookie cho các endpoint bắt đầu bằng /auth
             )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -209,7 +212,7 @@ class AuthService:
             value=new_refresh_token,    
             httponly=True,                                                      # Chống XSS (JS không đọc được)
             secure=False if settings.ENVIRONMENT != "production" else True,     # Đổi thành True khi chạy HTTPS Production
-            samesite="lax" if settings.ENVIRONMENT != "production" else "none",                                                     # Chống CSRF
+            samesite="lax" if settings.ENVIRONMENT != "production" else "none",
             max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
             path="/auth"                                                        # Chỉ gửi cookie cho các endpoint bắt đầu bằng /auth
         )
@@ -234,5 +237,6 @@ class AuthService:
             httponly=True,
             secure=False if settings.ENVIRONMENT != "production" else True,
             samesite="lax" if settings.ENVIRONMENT != "production" else "none",
+            path="/auth",
         )
         return None
