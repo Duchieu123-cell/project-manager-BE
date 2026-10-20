@@ -1,12 +1,4 @@
-.git
-.env
-.env.local
-.env.staging
+.venv/
+.env*
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.pytest_cache/
-.coverage
-venv/
-.venv/
