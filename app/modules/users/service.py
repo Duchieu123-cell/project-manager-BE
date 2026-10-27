@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from app.core.security import get_password_hash
 from app.core.enum_data import PermissionEnum
+from app.core.exceptions import EmailExistsError
 
 class UserService:
     
@@ -12,26 +13,14 @@ class UserService:
         """
         Đăng ký người dùng mới.
         """
-        # Kiểm tra xem username hoặc email đã tồn tại chưa
-        existing_user = (await db.execute(
-            select(models.User).where(models.User.username == user_data.username)
-        )).scalars().first()
-        
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username đã tồn tại."
-            )
-        
+        # Kiểm tra xem email đã tồn tại chưa
         existing_user = (await db.execute(
             select(models.User).where(models.User.email == user_data.email)
         )).scalars().first()
         
         if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email đã tồn tại."
-            )
+            raise EmailExistsError("Email đã tồn tại trong hệ thống.")
+        
         # Khởi tạo user mới với 3 permission mặc định: VIEW_USER, VIEW_PROJECT, VIEW_TASK
         stmt = (
             select(models.Permission)

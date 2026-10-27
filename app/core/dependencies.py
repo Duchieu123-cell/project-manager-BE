@@ -11,6 +11,11 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 from app.core.enum_data import PermissionEnum
 from app.core.security import get_password_hash
+from app.core.exceptions import (
+    InvalidAccessTokenError,
+    ExpiredAccessTokenError,
+    ForbiddenError
+)
 
 DBSession = Annotated[AsyncSession, Depends(get_db)]
 Token = Annotated[str, Depends(OAuth2PasswordBearer(tokenUrl="/auth/token"))]
@@ -21,35 +26,14 @@ async def get_current_user(access_token: Token, db: DBSession) -> models.User:
         user_id_str: str | None = payload.get("sub")
         
         if not user_id_str:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={
-                    "message": "Không tìm thấy id người dùng từ access token",
-                    "type": "invalid_access_token"
-                },
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            raise InvalidAccessTokenError("Access token không hợp lệ: không tìm thấy 'sub' claim")
             
         user_id = int(user_id_str)
     
     except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Access token đã hết hạn",
-                "type": "expired_access_token"
-            },
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise ExpiredAccessTokenError("Access token đã hết hạn")
     except (InvalidTokenError, ValueError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Access token không hợp lệ",
-                "type": "invalid_access_token"
-            },
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise InvalidAccessTokenError("Access token không hợp lệ")
         
     stmt = (
         select(models.User)
@@ -60,14 +44,7 @@ async def get_current_user(access_token: Token, db: DBSession) -> models.User:
     user = (await db.execute(stmt)).scalars().first()
             
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Không tìm thấy người dùng có id từ access token",
-                "type": "invalid_access_token"
-            },
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise InvalidAccessTokenError("Access token không hợp lệ: người dùng không tồn tại")
         
     return user
         
@@ -81,10 +58,7 @@ class PermissionChecker:
     async def __call__(self, current_user: CurrentUser) -> models.User:
         has_permission = (self.required_permission in [perm.permission for perm in current_user.has_permissions])
         if not has_permission:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Bạn không có quyền truy cập."
-            )
+            raise ForbiddenError(f"Người dùng không có quyền: {self.required_permission}")
             
         return current_user
 

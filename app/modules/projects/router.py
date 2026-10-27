@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from app.modules.projects import schemas
 from app.core.dependencies import (
     DBSession,
@@ -65,14 +65,8 @@ async def delete_project(
     db: DBSession,
     current_user: DELETE_PROJECT_PERMISSION
 ):
-    result = await ProjectService.delete_project(project_id, db)
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"Không tìm thấy project có ID: {project_id}"
-        )
-        
-    return result
+    return await ProjectService.delete_project(project_id, db)
+
 
 @project_router.patch(
     "/{project_id}",
@@ -85,14 +79,8 @@ async def update_project(
     db: DBSession,
     current_user: UPDATE_PROJECT_PERMISSION
 ):
-    result = await ProjectService.update_project(project_data, project_id, db)
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"Không tìm thấy project có ID: {project_id}"
-        )
-        
-    return result
+    return await ProjectService.update_project(project_data, project_id, db)
+
 
 # Task router
 @task_router.get(
@@ -135,14 +123,7 @@ async def delete_task(
     db: DBSession,
     current_user: DELETE_TASK_PERMISSION
 ):
-    result = await TaskService.delete_task(task_id, db)
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"Không tìm thấy task có ID: {task_id}"
-        )
-        
-    return result
+    return await TaskService.delete_task(task_id, db)
 
 @task_router.patch(
     "/{task_id}",
@@ -155,11 +136,4 @@ async def update_task(
     db: DBSession,
     current_user: UPDATE_TASK_PERMISSION
 ):
-    result = await TaskService.update_task(task_data, task_id, db)
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"Không tìm thấy task có ID: {task_id}"
-        )
-        
-    return result
+    return await TaskService.update_task(task_data, task_id, db)

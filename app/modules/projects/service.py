@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timezone
 from fastapi import HTTPException, status
+from app.core.exceptions import EntityNotFoundError
 
 class ProjectService:
 
@@ -30,7 +31,7 @@ class ProjectService:
     async def delete_project(project_id: int, db: AsyncSession) -> models.Project:
         project = await db.get(models.Project, project_id)
         if not project:
-            return None
+            raise EntityNotFoundError("Không tìm thấy project có ID: {project_id}")
         
         await db.delete(project)
         await db.flush()
@@ -41,7 +42,7 @@ class ProjectService:
     async def update_project(project_data: schemas.ProjectUpdate, project_id: int, db: AsyncSession) -> models.Project:
         project = await db.get(models.Project, project_id)
         if not project:
-            return None
+            raise EntityNotFoundError("Không tìm thấy project có ID: {project_id}")
         
         project_data_dict = project_data.model_dump(exclude_unset=True)
         
@@ -67,18 +68,12 @@ class TaskService:
         # Kiem tra xem dự án có tồn tại không
         project = await db.get(models.Project, project_id)
         if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Không tìm thấy project có ID: {project_id}"
-            )
+            raise EntityNotFoundError(f"Không tìm thấy project có ID: {project_id}")
         
         tasks = (await db.execute(select(models.Task).where(models.Task.projectId == project_id))).scalars().all()
         
         if not tasks:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Không tìm thấy nhiệm vụ nào cho project có ID là {project_id}"
-            )
+            raise EntityNotFoundError(f"Không tìm thấy nhiệm vụ nào cho project có ID là {project_id}")
         
         return tasks
 
@@ -102,7 +97,7 @@ class TaskService:
     async def delete_task(task_id: int, db: AsyncSession) -> models.Task:
         task = await db.get(models.Task, task_id)
         if not task:
-            return None
+            raise EntityNotFoundError("Không tìm thấy task có ID: {task_id}") 
         
         await db.delete(task)
         await db.flush()
@@ -113,7 +108,7 @@ class TaskService:
     async def update_task(task_data: schemas.TaskUpdate, task_id: int, db: AsyncSession) -> models.Task:
         task = await db.get(models.Task, task_id)
         if not task:
-            return None
+            raise EntityNotFoundError("Không tìm thấy task có ID: {task_id}")
         
         task_data_dict = task_data.model_dump(exclude_unset=True)
         

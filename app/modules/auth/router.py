@@ -4,7 +4,7 @@ from app.core.dependencies import DBSession
 from typing import Annotated
 from app.modules.auth.service import AuthService
 from app.modules.auth import schemas
-
+from app.core.exceptions import NoRefreshTokenError
 
 router = APIRouter(
     prefix="/auth",
@@ -35,11 +35,7 @@ async def refresh_access_token(
 
 ):
     if not refresh_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Không tìm thấy Refresh Token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise NoRefreshTokenError("Không tìm thấy Refresh Token trong cookie")
         
     return await AuthService.refresh_access_token(response, refresh_token, db)
 
@@ -54,10 +50,6 @@ async def logout_user(
     refresh_token: Annotated[str | None, Cookie()] = None,
 ):
     if not refresh_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Không tìm thấy Refresh Token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise NoRefreshTokenError("Không tìm thấy Refresh Token trong cookie")
         
     return await AuthService.logout_user(response, refresh_token, db)

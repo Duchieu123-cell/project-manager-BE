@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -6,6 +7,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.users.router import router as users_router
 from app.modules.projects.router import project_router, task_router
 from app.core.dependencies import create_admin, load_permissions
+from app.core.exceptions import AppException, UnauthorizedError
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,6 +32,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(AppException)
+def app_exception_handler(request: Request, exc: AppException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error_code": exc.error_code, 
+            "message": exc.message
+        },
+        headers={"WWW-Authenticate": "Bearer"} if isinstance(exc, UnauthorizedError) else None
+    )
 
 app.include_router(auth_router)
 app.include_router(users_router)
