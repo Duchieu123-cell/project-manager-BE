@@ -1,6 +1,6 @@
 class AppException(Exception):
-    status_code = 500
-    error_code = "APP_ERROR"
+    status_code: int
+    error_code: str
     
     def __init__(self, message: str):
         self.message = message
@@ -44,3 +44,7 @@ class ForbiddenError(AppException):
 class EntityNotFoundError(AppException):
     status_code = 404
     error_code = "ENTITY_NOT_FOUND"
+    
+class InternalServerError(AppException):
+    status_code = 500
+    error_code = "INTERNAL_SERVER_ERROR"
